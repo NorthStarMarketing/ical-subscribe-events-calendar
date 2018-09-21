@@ -18,7 +18,7 @@
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
  */
 
-add_action( 'init', 'is_events_calendar_activated' );
+add_action( 'init', 'isec_is_events_calendar_activated' );
 
 /**
  * Checks if the events calendar plugin is activated.
