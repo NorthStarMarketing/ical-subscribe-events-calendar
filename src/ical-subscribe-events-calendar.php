@@ -18,12 +18,12 @@
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
  */
 
-add_action( 'init', 'isec_is_events_calendar_activated' );
+add_action( 'init', 'is_events_calendar_activated' );
 
 /**
  * Checks if the events calendar plugin is activated.
  */
-function isec_is_events_calendar_activated() {
+function is_events_calendar_activated() {
 
 	if ( ! class_exists( 'Tribe__Events__Main' ) ) {
 
@@ -42,6 +42,11 @@ function isec_is_events_calendar_activated() {
 		add_action( 'plugins_loaded', 'isec_plugin_init' );
 		add_action( 'tribe_events_after_footer', 'isec_add_ical_subscribe_link' );
 		add_action( 'pre_get_posts', 'isec_year_ics_export' );
+
+		if (! wp_next_scheduled ( 'isec_update_events' )) {
+			wp_schedule_event(time(), 'hourly', 'isec_update_events');
+		}
+		add_action('isec_update_events', 'isec_create_events_file');
 
 	}
 
@@ -68,8 +73,11 @@ function isec_plugin_admin_notice() {
  * Adds the iCal Subscribe link to the bottom of the calendar page.
  */
 function isec_add_ical_subscribe_link() {
-	$url  = parse_url( tribe_get_ical_link( 'upcoming' ) );
-	$feed = str_replace( $url['scheme'], 'webcal', tribe_get_ical_link( 'upcoming' ) );
+	$upload_dir = wp_upload_dir();
+	$url        = $upload_dir['baseurl'] . '/basic.ics';
+	$parsed_url = parse_url( $url );
+	$feed       = str_replace( $parsed_url['scheme'], 'webcal', $url );
+	//$feed = str_replace( $url['scheme'], 'webcal', tribe_get_ical_link( 'upcoming' ) );
 	echo '<a href="' . $feed . '" class="tribe-events-button" style="margin-top: 21px;">+ Subscribe</a>';
 }
 
@@ -88,4 +96,12 @@ function isec_year_ics_export( $query ) {
 	$query->set( 'post_type', 'tribe_events' );
 	$query->set( 'posts_per_page', 100000 );
 	$query->set( 'eventDisplay', 'list' );
+}
+
+function isec_create_events_file() {
+	$file_url   = tribe_get_ical_link( 'upcoming' );
+	$upload_dir = wp_upload_dir();
+
+	$file_contents = file_get_contents( $file_url );
+	file_put_contents( $upload_dir['basedir'] . '/basic.ics', $file_contents );
 }
